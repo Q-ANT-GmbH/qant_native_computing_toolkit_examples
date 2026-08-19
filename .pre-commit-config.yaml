@@ -1,0 +1,14 @@
+repos:
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
+        args: [--extra-keys, "metadata.kernelspec metadata.language_info.version"]
+  
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.6
+    hooks:
+      - id: ruff
+        types_or: [ python, pyi ]
+      - id: ruff-format
+        types_or: [ python, pyi ]

@@ -1,0 +1,16 @@
+name: CI
+on:
+  push:
+
+jobs:
+  tests:
+    uses: ./.github/workflows/workflow.yml
+    secrets: inherit
+
+  # Publish a release only on a version tag, and only once tests pass.
+  release:
+    needs: [tests]
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+    permissions:
+      contents: write
+    uses: ./.github/workflows/workflow_release.yml

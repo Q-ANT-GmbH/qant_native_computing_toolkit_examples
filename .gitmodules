@@ -1,0 +1,6 @@
+[submodule "qant_native_computing_toolkit"]
+	path = qant_native_computing_toolkit
+	url = git@github.com:Q-ANT-GmbH/qant_native_computing_toolkit.git
+[submodule "dlpack"]
+	path = dlpack
+	url = git@github.com:dmlc/dlpack.git
