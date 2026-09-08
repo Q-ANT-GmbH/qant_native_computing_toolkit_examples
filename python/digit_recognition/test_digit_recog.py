@@ -1,8 +1,8 @@
-import qant_native_computing_toolkit.ai as q_ai
-import testbook
-import numpy as np
 import os
 
+import numpy as np
+import qant_native_computing_toolkit.ai as q_ai
+import testbook
 import utils
 
 

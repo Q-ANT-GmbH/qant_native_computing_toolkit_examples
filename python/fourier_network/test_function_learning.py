@@ -1,6 +1,7 @@
-import testbook
-import numpy as np
 import os
+
+import numpy as np
+import testbook
 
 
 def test_notebook():

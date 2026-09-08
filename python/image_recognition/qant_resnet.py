@@ -2,11 +2,13 @@
 This file contains the implementation of ResNet-18 using the Q.ANT Native Computing Toolkit for image classification. The implementation includes the necessary components such as convolutional layers, batch normalization, and fully connected layers, all optimized for the Q.ANT architecture.
 """
 
-from typing import Mapping, Any
-import torch
+from collections.abc import Mapping
+from typing import Any
+
+import ml_dtypes
 import numpy as np
 import qant_native_computing_toolkit.ai as q_ai
-import ml_dtypes
+import torch
 
 
 def downsample(
@@ -96,7 +98,7 @@ class QantResNet18:
 
     def _preprocess_state_dict(self, w_org):
         w = {}
-        for k in w_org.keys():
+        for k in w_org:
             w[k] = w_org[k].detach().numpy().astype(ml_dtypes.bfloat16)
 
         return w

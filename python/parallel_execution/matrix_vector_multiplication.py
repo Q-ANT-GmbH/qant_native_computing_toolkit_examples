@@ -1,15 +1,16 @@
-import numpy as np
-import os
 import concurrent.futures
-from multiprocessing import shared_memory
-import typing
+import os
 import time
+from multiprocessing import shared_memory
+
 import ml_dtypes
+import numpy as np
+
 import qant_native_computing_toolkit as qant
 
 
 def multiply_matrix_vector_single(
-    args: typing.Tuple[np.ndarray, np.ndarray],
+    args: tuple[np.ndarray, np.ndarray],
 ) -> np.ndarray:
     """
     Worker for the single-process approach
@@ -20,7 +21,7 @@ def multiply_matrix_vector_single(
 
 
 def multiply_matrix_vector_multi(
-    args: typing.Tuple[str, str, int, int, int, int, dict[int, int]],
+    args: tuple[str, str, int, int, int, int, dict[int, int]],
 ) -> np.ndarray:
     """
     Worker for the multi-process approach

@@ -1,8 +1,9 @@
+import importlib
+import os
+
 import numpy as np
 import torch
-import os
 from testbook import testbook
-import importlib
 
 
 def compare_masks(mask_a: np.ndarray, mask_b: np.ndarray):

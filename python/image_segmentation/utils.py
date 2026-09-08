@@ -1,8 +1,8 @@
-from skimage.exposure import rescale_intensity
 import numpy as np
-from PIL import Image
-from torchvision import transforms
 import requests
+from PIL import Image
+from skimage.exposure import rescale_intensity
+from torchvision import transforms
 
 
 def get_image(url):

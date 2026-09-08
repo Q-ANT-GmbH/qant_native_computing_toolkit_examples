@@ -1,8 +1,9 @@
-import torchvision
-import torch
-import numpy as np
-from ml_dtypes import bfloat16
 from pathlib import Path
+
+import numpy as np
+import torch
+import torchvision
+from ml_dtypes import bfloat16
 
 torch.manual_seed(42)
 
@@ -41,7 +42,7 @@ def load_NN_weights():
 
 
 def display_result(digit, certainty):
-    from IPython.display import display, HTML
+    from IPython.display import HTML, display
 
     display(
         HTML(
