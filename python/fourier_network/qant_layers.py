@@ -5,10 +5,9 @@ This file contains the implementation of QLinear and QFourier layers.
 import math
 
 import numpy as np
+import qant_native_computing_toolkit as qant
 import torch
 from ml_dtypes import bfloat16
-
-import qant_native_computing_toolkit as qant
 
 
 class QLinear(torch.nn.Linear):

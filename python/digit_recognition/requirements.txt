@@ -9,5 +9,3 @@ testbook
 ipykernel
 jupyter
 pytest
-requests
-Pillow

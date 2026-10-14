@@ -5,7 +5,6 @@ from multiprocessing import shared_memory
 
 import ml_dtypes
 import numpy as np
-
 import qant_native_computing_toolkit as qant
 
 
@@ -15,7 +14,7 @@ def multiply_matrix_vector_single(
     """
     Worker for the single-process approach
     """
-    (matrix, vector) = args
+    matrix, vector = args
     print(f"Worker[0 with pid {os.getpid()}] solves a job")
     return qant.native.linear_fprop(vector, matrix, device_id=0)
 
@@ -65,7 +64,7 @@ def getpid(_):
 
 def main():
     """
-    In this example, we show a basic example on how to parallelise a workload for multiple NPUs.
+    In this example, we show a basic example on how to parallelize a workload for multiple NPUs.
     Given a batch of matrices to be multiplied with a vector, we use multiprocessing and SharedMemory
     to distribute parts of the batch to different NPUs.
     """

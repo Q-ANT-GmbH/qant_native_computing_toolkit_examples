@@ -3,7 +3,9 @@ This project demonstrates image recognition using a ResNet-18 neural network, ex
 
 ## Overview
 Notebook: image_recognition_on_npu.ipynb
-Contains the complete workflow for evaluating the image recognition model.
+Contains the complete workflow for evaluating the image recognition model, using qant_resnet.py.
+In addition, it contains the workflow for evaluating the image recognition model using qant_resnet_with_mem.py, which leverages the NPU's explicit memory-management API for all convolutions and the fully connected layer.
+
 
 Dataset: ImageNet
 The model classifies input pictures and classifies the input into on of the 1000 classes of ImageNet.

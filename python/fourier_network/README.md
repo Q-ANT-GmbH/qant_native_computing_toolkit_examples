@@ -23,3 +23,11 @@ pip install -r requirements.txt
 ## Usage
 Run the notebook:
 Open function_learning_on_npu.ipynb in Jupyter Notebook or JupyterLab to explore the code and results interactively.
+
+## Testing
+PyTest test case:
+The file test_function_learning.py executes the notebook and asserts that the final training losses of both the MLP and Fourier models stay below their expected thresholds.
+
+```bash
+pytest test_function_learning.py 
+```

@@ -2,12 +2,12 @@ name: Publish release
 
 on: workflow_call
 
-# Bundles the examples (cpp/, python/) into a zip and publishes
+# Bundles the examples (cpp/, python/, community/) into a zip and publishes
 # it as a GitHub Release. Called by CI only on a version tag and only after
 # the tests job passes.
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
@@ -19,7 +19,7 @@ jobs:
         run: |
           mkdir -p release_assets
           tag="${{ github.ref_name }}"
-          zip -r "release_assets/qant-native-computing-toolkit-examples-${tag}.zip" cpp python
+          zip -r "release_assets/qant-native-computing-toolkit-examples-${tag}.zip" cpp python community
           ls -l release_assets
       - name: Create GitHub Release and attach bundle
         uses: softprops/action-gh-release@v2

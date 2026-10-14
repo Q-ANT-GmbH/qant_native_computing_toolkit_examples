@@ -1,41 +1,21 @@
 name: tests
 on: workflow_call
 
+# The toolkit is built once per language binding (Python wheel, C deb package) and shared as an
+# artifact; every example then runs in its own job, so all example tests execute in parallel.
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20   
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git curl jq cmake patchelf gzip dpkg lintian python3 libclang-dev clang clang-format
-      - name: Set up ssh agent with permissions to repos
-        # https://github.com/actions/checkout/discussions/928#discussioncomment-3870812
-        uses: webfactory/ssh-agent@v0.10.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.TOOLKIT_DEPLOY_PRIVATE_KEY }}
-            ${{ secrets.TOOLKIT_EXAMPLES_DEPLOY_PRIVATE_KEY }}
-      - name: Add GitHub to known_hosts
-        # Workaround: webfactory/ssh-agent stopped writing GitHub's SSH host keys
-        # to known_hosts in v0.8.0 (see its CHANGELOG). With multiple deploy keys
-        # it also rewrites URLs to per-repo aliases like key-<sha>.github.com,
-        # and SSH verifies the host key under the alias name. We write to the
-        # system-wide known_hosts so the file is found regardless of which HOME
-        # (/root, /github/home, ...) ssh ends up using in this container job.
-        run: |
-          set -euo pipefail
-          curl -fsSL https://api.github.com/meta \
-            | jq -r '.ssh_keys[] | "github.com " + .' > /tmp/gh_keys
-          sudo tee -a /etc/ssh/ssh_known_hosts < /tmp/gh_keys > /dev/null
-          sed 's/^github\.com /*.github.com /' /tmp/gh_keys | sudo tee -a /etc/ssh/ssh_known_hosts > /dev/null
-          rm /tmp/gh_keys
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-          persist-credentials: false
+          sudo apt install -y clang-format
       - name: linting etc
         uses: pre-commit/action@v3.0.1
       - name: Check formatting
@@ -45,106 +25,159 @@ jobs:
           # use .clang_format style
           find . \( -path ./dlpack -o -path ./qant_native_computing_toolkit -o -name build \) -prune -o \( -name '*.cpp' -o -name '*.hpp' -o -name '*.c' -o -name '*.h' \) \
           -exec clang-format --dry-run --Werror {} +
+
+  build-python-toolkit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/checkout-toolkit
+        with:
+          toolkit-deploy-key: ${{ secrets.TOOLKIT_DEPLOY_PRIVATE_KEY }}
+          examples-deploy-key: ${{ secrets.TOOLKIT_EXAMPLES_DEPLOY_PRIVATE_KEY }}
       - uses: dtolnay/rust-toolchain@1.93.0
       # env required by maturin
       - uses: actions/setup-python@v6
-      - uses: conda-incubator/setup-miniconda@v4.0.1
         with:
-          channels: conda-forge
-          auto-update-conda: true
-          activate-environment: false
-          miniforge-version: "latest"
-      - name: Create conda environment
-        run: |
-          conda create -n test_env python=3.12 -y 
-          conda init
-      - name: install toolkit with cpu-backend
+          python-version: "3.12"
+      - name: build toolkit wheel with cpu-backend
         shell: bash
-        run: | 
+        run: |
           set -e
-          source ~/.bashrc
-          conda activate test_env
-          cd qant_native_computing_toolkit/
           pip3 install maturin
-          RUST_FEATURES="-F cpu-backend"
-          maturin develop $RUST_FEATURES
-      - name: Python introduction test 
-        shell: bash
-        run: | 
-          set -e
-          source ~/.bashrc
-          conda activate test_env
-          cd python/introduction
-          pip3 install -r requirements.txt
-          pytest .
-      - name: digit recognition test 
-        shell: bash
-        run: | 
-          set -e
-          source ~/.bashrc
-          conda activate test_env
-          cd python/digit_recognition
-          pip3 install -r requirements.txt
-          pytest .
-      - name: image recognition test
-        shell: bash
-        run: | 
-          set -e
-          source ~/.bashrc
-          conda activate test_env
-          cd python/image_recognition
-          pip3 install -r requirements.txt
-          pytest .
-      - name: Fourier network 1D function fit test 
-        shell: bash
-        run: | 
-          set -e
-          source ~/.bashrc
-          conda activate test_env
-          cd python/fourier_network
-          pip3 install -r requirements.txt
-          pytest .
-      - name: parallel mat vec test
-        shell: bash
-        run: |
-          set -e
-          source ~/.bashrc
-          conda activate test_env
-          cd python/parallel_execution
-          pip3 install -r requirements.txt
-          pytest .
+          cd qant_native_computing_toolkit/
+          maturin build --release -F cpu-backend --out ../dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toolkit-wheel
+          path: dist/*.whl
+          if-no-files-found: error
+          retention-days: 1
 
-      # C examples
+  build-c-toolkit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/checkout-toolkit
+        with:
+          toolkit-deploy-key: ${{ secrets.TOOLKIT_DEPLOY_PRIVATE_KEY }}
+          examples-deploy-key: ${{ secrets.TOOLKIT_EXAMPLES_DEPLOY_PRIVATE_KEY }}
+      - uses: dtolnay/rust-toolchain@1.93.0
       - name: build toolkit library
         run: |
+          set -e
           cd qant_native_computing_toolkit
           cargo build --release -F cpu-backend
           cargo install tomlq
           ./src/c_bridge/packaging/create_deb.sh cpu-backend
-          sudo apt install -y ./target/deb/qant-native-computing-toolkit*.deb
-      - name: run minimal dependency examples
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toolkit-deb
+          path: qant_native_computing_toolkit/target/deb/qant-native-computing-toolkit*.deb
+          if-no-files-found: error
+          retention-days: 1
+
+  python-tests:
+    name: python / ${{ matrix.example }}
+    needs: build-python-toolkit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - introduction
+          - digit_recognition
+          - image_recognition
+          - fourier_network
+          - parallel_execution
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: toolkit-wheel
+          path: dist
+      - name: install toolkit and example requirements
+        shell: bash
         run: |
-          cd ./cpp/mul_elementwise/
-          ./run_examples.sh
-      - name: run xtensor based example
-        shell: bash
-        run: | 
           set -e
-          source ~/.bashrc
-          conda activate test_env
-          conda install -y xtensor=0.25.0 xtensor-blas=0.21.0 cmake=3.31
-          cd ./cpp/mat_vec_product
-          ./run_example.sh
-      - name: run performance example
-        shell: bash
-        run: | 
-          cd ./cpp/npu_performance_measurement/
-          ./run_example.sh
-      - name: run parallel example
+          pip3 install dist/*.whl
+          pip3 install -r python/${{ matrix.example }}/requirements.txt
+      - name: test
         shell: bash
         run: |
-          set -e
-          source ~/.bashrc
-          conda activate test_env
-          cd ./cpp/mat_vec_parallel/
-          ./run_example.sh
+          cd python/${{ matrix.example }}
+          pytest .
+
+  cpp-tests:
+    name: cpp / ${{ matrix.example }}
+    needs: build-c-toolkit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - example: mul_elementwise
+            script: run_examples.sh
+            xtensor: false
+          - example: npu_performance_measurement
+            script: run_example.sh
+            xtensor: false
+          - example: mat_vec_product
+            script: run_example.sh
+            xtensor: true
+          - example: mat_vec_parallel
+            script: run_example.sh
+            xtensor: true
+          - example: mat_vec_product_with_mem
+            script: run_example.sh
+            xtensor: true
+    defaults:
+      run:
+        # login shell, so that the conda environment is activated in every step
+        shell: bash -el {0}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: checkout dlpack submodule
+        # dlpack is public, so it is fetched via https and no deploy keys are needed here
+        run: git -c url."https://github.com/".insteadOf="git@github.com:" submodule update --init --depth 1 dlpack
+      - uses: actions/download-artifact@v4
+        with:
+          name: toolkit-deb
+          path: deb
+      - name: install toolkit library
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake ./deb/qant-native-computing-toolkit*.deb
+      - uses: conda-incubator/setup-miniconda@v4.0.1
+        if: matrix.xtensor
+        with:
+          channels: conda-forge
+          auto-update-conda: true
+          activate-environment: test_env
+          python-version: "3.12"
+          miniforge-version: "latest"
+      - name: install xtensor
+        if: matrix.xtensor
+        run: conda install -y xtensor=0.25.0 xtensor-blas=0.21.0 cmake=3.31
+      - name: run example
+        run: |
+          cd ./cpp/${{ matrix.example }}/
+          ./${{ matrix.script }}

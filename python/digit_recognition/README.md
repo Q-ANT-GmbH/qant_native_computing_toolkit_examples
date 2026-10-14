@@ -5,6 +5,11 @@ This project demonstrates digit recognition using a two-layer fully-connected ne
 Notebook: digit_recognition_on_npu.ipynb
 Contains the complete workflow for evaluating the digit recognition model.
 
+Notebook: digit_recognition_on_npu_with_mem.ipynb
+Same model and workflow, but the linear layers are executed via the NPU's explicit memory-management
+API (upload/allocate/upload_into/linear_fprop_preloaded_weights) instead of the high-level `q_ai` calls,
+so the weight handles can be managed and reused explicitly.
+
 Dataset: MNIST
 The model classifies input images of handwritten digits (0–9) from the MNIST dataset.
 
@@ -17,7 +22,8 @@ pip install -r requirements.txt
 
 ## Usage
 Run the notebook:
-Open digit_recognition_on_npu.ipynb in Jupyter Notebook or JupyterLab to explore the code and results interactively.
+Open digit_recognition_on_npu.ipynb (or digit_recognition_on_npu_with_mem.ipynb for the explicit
+memory-management variant) in Jupyter Notebook or JupyterLab to explore the code and results interactively.
 
 ## Testing
 PyTest test case:

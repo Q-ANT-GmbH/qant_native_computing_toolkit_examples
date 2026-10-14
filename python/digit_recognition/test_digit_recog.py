@@ -54,3 +54,16 @@ def test_notebook():
         # convert np.int64 to normal int for comparison
         pred = int(tb.get("prediction").item())
         np.testing.assert_equal(pred, label)
+
+
+def test_notebook_with_mem():
+    # Set working directory before testing for testing a collection of pytests
+    os.chdir(os.path.join(os.path.abspath(os.path.dirname(__file__))))
+
+    with testbook.testbook(
+        "./digit_recognition_on_npu_with_mem.ipynb", execute=True
+    ) as tb:
+        label = tb.get("label")
+        # convert np.int64 to normal int for comparison
+        pred = int(tb.get("prediction").item())
+        np.testing.assert_equal(pred, label)

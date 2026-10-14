@@ -4,17 +4,18 @@
 
 #include <dlpack/dlpack.h>
 #include <iostream>
+#include <stdfloat>
 #include <vector>
 
 #include "qant_native_computing_toolkit.h"
 
 using namespace qant_native_computing_toolkit;
 
-void print_array_float(const std::vector<float> &vec)
+void print_array(const std::vector<std::bfloat16_t> &vec)
 {
     for (auto elem : vec)
     {
-        std::cout << elem << " ";
+        std::cout << static_cast<float>(elem) << " ";
     }
     std::cout << std::endl;
 }
@@ -27,7 +28,7 @@ void delete_mtensor(struct DLManagedTensorVersioned *self)
 /// @brief Utility function to create a DLManagedTensorVersioned based on a std::vector
 /// @param vec The vector that holds the data
 /// @return The DLManagedTensorVersioned that wraps the data owned by the input vector.
-DLManagedTensorVersioned vector_to_mtensor(const std::vector<float> &vec)
+DLManagedTensorVersioned vector_to_mtensor(const std::vector<std::bfloat16_t> &vec)
 {
     int64_t const len = vec.size();
 
@@ -37,8 +38,8 @@ DLManagedTensorVersioned vector_to_mtensor(const std::vector<float> &vec)
     tensor.shape[0] = len;
     tensor.strides = NULL;
 
-    tensor.dtype.code = kDLFloat;
-    tensor.dtype.bits = 32;
+    tensor.dtype.code = kDLBfloat;
+    tensor.dtype.bits = 16;
     tensor.dtype.lanes = 1;
 
     tensor.data = const_cast<void *>(static_cast<const void *>(vec.data()));
@@ -58,24 +59,23 @@ DLManagedTensorVersioned vector_to_mtensor(const std::vector<float> &vec)
 /// @brief Util function to extract a vector from a DLManagedTensorVersioned
 /// @param tensor The DLManagedTensorVersioned that holds the data
 /// @return A vector containing the data that the DLManagedTensorVersioned owns
-std::vector<float> mtensor_to_vector(DLManagedTensorVersioned const *tensor)
+std::vector<std::bfloat16_t> mtensor_to_vector(DLManagedTensorVersioned const *tensor)
 {
-    float *data = static_cast<float *>(tensor->dl_tensor.data);
-    std::vector<float> vec(data, data + tensor->dl_tensor.shape[0]);
+    auto *data = static_cast<std::bfloat16_t *>(tensor->dl_tensor.data);
+    std::vector<std::bfloat16_t> vec(data, data + tensor->dl_tensor.shape[0]);
     return vec;
 }
 
 int main()
 {
-    int n_elems = 10;
     int npu_id = 0;
 
-    std::vector<float> us = {0.9, 0.8, 0.7, 0.6};
-    std::vector<float> vs = {0.5, 0.3, 0.2, 0.1};
+    std::vector<std::bfloat16_t> us = {0.9bf16, 0.8bf16, 0.7bf16, 0.6bf16};
+    std::vector<std::bfloat16_t> vs = {0.5bf16, 0.3bf16, 0.2bf16, 0.1bf16};
     auto us_tensor = vector_to_mtensor(us);
     auto vs_tensor = vector_to_mtensor(vs);
 
-    auto res_npu_mtensor = native::mul_npu_f32(npu_id, &us_tensor, &vs_tensor);
+    auto res_npu_mtensor = native::mul_npu(npu_id, &us_tensor, &vs_tensor);
     if (res_npu_mtensor == nullptr)
     {
         exit(-1);
@@ -83,7 +83,7 @@ int main()
 
     auto res_npu_vec = mtensor_to_vector(res_npu_mtensor);
 
-    std::vector<float> res_cpu_vec(us.size());
+    std::vector<std::bfloat16_t> res_cpu_vec(us.size());
 
     for (size_t i = 0; i < res_cpu_vec.size(); ++i)
     {
@@ -91,13 +91,13 @@ int main()
     }
 
     std::cout << "us" << std::endl;
-    print_array_float(us);
+    print_array(us);
     std::cout << "vs" << std::endl;
-    print_array_float(vs);
+    print_array(vs);
     std::cout << "multiplied on npu" << std::endl;
-    print_array_float(res_npu_vec);
+    print_array(res_npu_vec);
     std::cout << "multiplied on cpu" << std::endl;
-    print_array_float(res_cpu_vec);
+    print_array(res_cpu_vec);
 
     generic::release_npu(npu_id);
     us_tensor.deleter(&us_tensor);

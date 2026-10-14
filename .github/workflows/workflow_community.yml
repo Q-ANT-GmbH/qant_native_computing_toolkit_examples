@@ -1,0 +1,143 @@
+name: community examples
+on: workflow_call
+
+# Runs every example below community/ against the toolkit (CPU backend).
+# Community examples are not maintained by Q.ANT, but we don't ship broken
+# examples: if any example fails, this workflow fails and the release job in
+# CI.yml is blocked. The summary table lists the examples that need to be fixed
+# or removed before the release.
+
+jobs:
+  build-toolkit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git curl jq cmake patchelf gzip dpkg lintian python3 libclang-dev clang
+      - name: Set up ssh agent with permissions to repos
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.TOOLKIT_DEPLOY_PRIVATE_KEY }}
+            ${{ secrets.TOOLKIT_EXAMPLES_DEPLOY_PRIVATE_KEY }}
+      - name: Add GitHub to known_hosts
+        # see workflow.yml for why this is needed
+        run: |
+          set -euo pipefail
+          curl -fsSL https://api.github.com/meta \
+            | jq -r '.ssh_keys[] | "github.com " + .' > /tmp/gh_keys
+          sudo tee -a /etc/ssh/ssh_known_hosts < /tmp/gh_keys > /dev/null
+          sed 's/^github\.com /*.github.com /' /tmp/gh_keys | sudo tee -a /etc/ssh/ssh_known_hosts > /dev/null
+          rm /tmp/gh_keys
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@1.93.0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: build python wheel (cpu-backend)
+        run: |
+          cd qant_native_computing_toolkit
+          pip3 install maturin
+          maturin build --release -F cpu-backend --out ../dist
+      - name: build debian package (cpu-backend)
+        run: |
+          cd qant_native_computing_toolkit
+          cargo install tomlq
+          ./src/c_bridge/packaging/create_deb.sh cpu-backend
+          cp ./target/deb/qant-native-computing-toolkit*.deb ../dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toolkit-cpu-backend
+          path: dist/
+          retention-days: 1
+
+  run-examples:
+    needs: build-toolkit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - name: install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git cmake python3
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: init dlpack submodule over https
+        run: git -c url."https://github.com/".insteadOf="git@github.com:" submodule update --init dlpack
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: toolkit-cpu-backend
+          path: dist/
+      - name: install toolkit debian package
+        run: sudo apt install -y ./dist/qant-native-computing-toolkit*.deb
+      - name: run community examples
+        shell: bash
+        run: |
+          set -u
+          root=$(pwd)
+          wheel=$(ls "$root"/dist/*.whl)
+          summary="$GITHUB_STEP_SUMMARY"
+          failed=0
+
+          echo "## Community examples" >> "$summary"
+          echo "" >> "$summary"
+          echo "| Example | Result |" >> "$summary"
+          echo "|---|---|" >> "$summary"
+
+          report() {
+            if [ "$2" -eq 0 ]; then
+              echo "| $1 | ✅ passed |" >> "$summary"
+            else
+              echo "| $1 | ❌ failed (exit $2) |" >> "$summary"
+              echo "::error title=community example failed::$1"
+              failed=1
+            fi
+          }
+
+          shopt -s nullglob
+          for dir in community/python/*/; do
+            name=${dir%/}
+            echo "::group::$name"
+            # fresh venv per example so dependencies of different examples don't clash
+            rm -rf /tmp/venv
+            (
+              set -e
+              python -m venv /tmp/venv
+              source /tmp/venv/bin/activate
+              pip install "$wheel"
+              pip install -r "$dir/requirements.txt"
+              cd "$dir"
+              timeout 15m pytest .
+            )
+            rc=$?
+            echo "::endgroup::"
+            report "$name" "$rc"
+          done
+
+          for dir in community/cpp/*/; do
+            name=${dir%/}
+            echo "::group::$name"
+            scripts=("$dir"run_example*.sh)
+            if [ ${#scripts[@]} -eq 0 ]; then
+              echo "no run_example.sh / run_examples.sh found"
+              rc=1
+            else
+              (cd "$dir" && timeout 15m "./$(basename "${scripts[0]}")")
+              rc=$?
+            fi
+            echo "::endgroup::"
+            report "$name" "$rc"
+          done
+
+          exit $failed

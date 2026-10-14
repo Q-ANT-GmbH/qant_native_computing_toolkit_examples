@@ -28,8 +28,11 @@ open an issue first to discuss the idea before investing significant time.
 
 ## Adding a new example
 
-Examples live under `python/` or `cpp/`, one directory per example. To keep
-things consistent, please follow the structure of existing examples:
+New examples from outside Q.ANT go into the **community zoo** under
+`community/python/<example_name>/` or `community/cpp/<example_name>/`. The
+official `python/` and `cpp/` folders are maintained by Q.ANT. Fixes and
+improvements to official examples are still welcome. Community examples
+follow the same structure as the official ones:
 
 - **Python examples**
   - Self-contained directory under `python/<example_name>/`.
@@ -50,6 +53,36 @@ things consistent, please follow the structure of existing examples:
 Please keep examples focused and minimal, favoring clarity over cleverness,
 and only add dependencies needed to demonstrate the concept.
 
+## Community examples
+
+Community examples are written and owned by their authors, **not maintained by
+Q.ANT**. See [community/README.md](community/README.md) for the disclaimer.
+In addition to the structure above, a community example must:
+
+- Include an `AUTHORS.md` with the author name(s) and GitHub handle(s) (see
+  `community/python/small_lm/AUTHORS.md`).
+- Start its `README.md` with the community banner (see
+  `community/python/small_lm/README.md`).
+- Run on the **CPU backend without NPU hardware**, with a test that finishes
+  in under ~10 minutes.
+- Pin heavy dependencies (e.g. `torch==2.11.0`).
+- Not commit large binaries (keep each example under ~10 MB). Download
+  datasets and weights from stable, well-known URLs, or generate them.
+- Not use Q.ANT logos or suggest that it is an official Q.ANT example.
+
+**How community examples get merged:** the public repository is published
+from an internal repository. After review, a maintainer ports your PR into the
+internal repository, and the example ships with the next release. You are
+credited as co-author of that commit (`Co-authored-by`) and listed in
+`AUTHORS.md`. Your PR is then closed with a link to that release, and not
+merged directly.
+
+**Removal policy:** We want every example to work for the people trying it, so community
+examples are tested in CI. Since you know your example best, fixes are up to you. If an
+example stops working (for example a crash, timeout, broken dependency or incompatible
+toolkit version), we take it out of the next release. Once you submit a fix, we'll gladly
+add it back.
+
 ## Code style
 
 - Python code is linted and formatted with [ruff](https://docs.astral.sh/ruff/)
@@ -62,9 +95,11 @@ and only add dependencies needed to demonstrate the concept.
 ## Testing
 
 - CI (see `.github/workflows/workflow.yml`) installs the toolkit with the
-  CPU backend and runs each example's tests/scripts. When adding a new
-  example, please also add it to the CI workflow so it's exercised
-  automatically.
+  CPU backend and runs the tests/scripts of each official example.
+- Community examples are discovered automatically by
+  `.github/workflows/workflow_community.yml`, so you don't need to edit any
+  workflow. CI does not run automatically on pull requests from forks.
+  Please run the tests locally before opening your PR.
 - Python examples should include a `pytest`-compatible test.
 - C++ examples should include a `run_example(s).sh` script that builds and
   runs successfully without manual intervention.

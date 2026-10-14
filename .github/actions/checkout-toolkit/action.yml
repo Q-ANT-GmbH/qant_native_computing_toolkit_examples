@@ -1,0 +1,44 @@
+name: Checkout toolkit
+description: Installs the build dependencies and checks out the private toolkit submodule (recursively) via ssh.
+
+inputs:
+  toolkit-deploy-key:
+    description: Deploy key with read access to the toolkit repo
+    required: true
+  examples-deploy-key:
+    description: Deploy key with read access to the examples repo
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: install dependencies
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential git curl jq cmake patchelf gzip dpkg lintian python3 libclang-dev clang
+    - name: Set up ssh agent with permissions to repos
+      # https://github.com/actions/checkout/discussions/928#discussioncomment-3870812
+      uses: webfactory/ssh-agent@v0.10.0
+      with:
+        ssh-private-key: |
+          ${{ inputs.toolkit-deploy-key }}
+          ${{ inputs.examples-deploy-key }}
+    - name: Add GitHub to known_hosts
+      # Workaround: webfactory/ssh-agent stopped writing GitHub's SSH host keys
+      # to known_hosts in v0.8.0 (see its CHANGELOG). With multiple deploy keys
+      # it also rewrites URLs to per-repo aliases like key-<sha>.github.com,
+      # and SSH verifies the host key under the alias name. We write to the
+      # system-wide known_hosts so the file is found regardless of which HOME
+      # (/root, /github/home, ...) ssh ends up using in this container job.
+      shell: bash
+      run: |
+        set -euo pipefail
+        curl -fsSL https://api.github.com/meta \
+          | jq -r '.ssh_keys[] | "github.com " + .' > /tmp/gh_keys
+        sudo tee -a /etc/ssh/ssh_known_hosts < /tmp/gh_keys > /dev/null
+        sed 's/^github\.com /*.github.com /' /tmp/gh_keys | sudo tee -a /etc/ssh/ssh_known_hosts > /dev/null
+        rm /tmp/gh_keys
+    - name: Checkout submodules
+      shell: bash
+      run: git submodule update --init --recursive

@@ -7,9 +7,13 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
 
-  # Publish a release only on a version tag, and only once tests pass.
+  community:
+    uses: ./.github/workflows/workflow_community.yml
+    secrets: inherit
+
+  # Publish a release only on a version tag, and only once all tests pass.
   release:
-    needs: [tests]
+    needs: [tests, community]
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
     permissions:
       contents: write

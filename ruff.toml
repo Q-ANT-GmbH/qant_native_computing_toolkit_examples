@@ -1,0 +1,2 @@
+[lint.isort]
+known-third-party = ["qant_native_computing_toolkit"]

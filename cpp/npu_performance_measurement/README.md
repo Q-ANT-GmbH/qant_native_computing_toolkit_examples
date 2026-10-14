@@ -8,7 +8,7 @@ C++23-compatible compiler (GCC/Clang)
 
 CMake >= 3.16
 
-DLPack == 0.6
+DLPack (bundled as the `dlpack/` git submodule, pinned at v1.2 — run `git submodule update --init dlpack` if the directory is empty)
 
 ## Usage
 Execute:

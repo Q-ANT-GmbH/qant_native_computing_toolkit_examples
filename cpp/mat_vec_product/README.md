@@ -1,5 +1,5 @@
 # Matrix-Vector Multiplication (NPU vs CPU Implementation)
-This project demonstrates hardware-accelerated matrix-vector multiplication using an NPU, with comparison to standard CPU execution. Ideal for benchmarking and understanding hardware acceleration benefits.
+This project demonstrates hardware-accelerated matrix-vector multiplication using an NPU, with comparison to standard CPU execution. Ideal for understanding hardware acceleration benefits. 
 
 ## Prerequisites
 Q.ANT Native Computing Toolkit (NPU driver/API)
@@ -12,7 +12,7 @@ XTensor == 0.25.0
 
 XTensor-BLAS == 0.21.0
 
-DLPack == 0.6
+DLPack (bundled as the `dlpack/` git submodule, pinned at v1.2 — run `git submodule update --init dlpack` if the directory is empty)
 
 ## Usage
 Execute:

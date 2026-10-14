@@ -38,7 +38,7 @@ int main()
     auto vec_mtensor = xarray_to_mtensor_view(vec_bf16);
     auto mat_mtensor = xarray_to_mtensor_view(mat_bf16);
 
-    // initialise the NPU and perform the operation.
+    // initialize the NPU and perform the operation.
     auto res_qant_mtensor = native::linear_fprop(npu_id, &vec_mtensor, &mat_mtensor);
     if (res_qant_mtensor == NULL)
     {

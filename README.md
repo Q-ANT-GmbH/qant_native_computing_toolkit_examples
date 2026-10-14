@@ -13,10 +13,19 @@ C++ API (provided as a installer): Required for C++ examples
 
 Note: Without the corresponding API installed, the examples will not run.
 
+C++ examples also depend on the bundled `dlpack` git submodule. If you cloned this
+repository without `--recurse-submodules`, initialize it first:
+```bash
+git submodule update --init dlpack
+```
+
 ## Directory Structure
 cpp/ — Contains all examples using the C++ API
 
 python/ — Contains all examples using the Python API
+
+community/ — Examples contributed by the community. These are **not maintained or supported by
+Q.ANT** and may be removed if they stop working. See [community/README.md](community/README.md).
 
 ## Getting Started
 Install the required API for your preferred language.

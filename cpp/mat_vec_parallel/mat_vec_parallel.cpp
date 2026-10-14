@@ -1,6 +1,6 @@
 /**
  * This file is an executable to demonstrate the basic usage of Q.ANT native computing toolkit
- * and how to parallelise a workload over multiple NPUs.
+ * and how to parallelize a workload over multiple NPUs.
  * The example task is to compute many matrix vector multiplications by sending batches to worker threads.
  * We use xtensor as the cpp tensor backend. This is not a requirement.
  * Any tensor/data storage framework (eigen3, std::vector, ...) can be used,
@@ -100,7 +100,7 @@ int main()
     }
 
     // perform dummy operation such that performance measurement later is not affected
-    // by initialisation and calibration.
+    // by initialization and calibration.
     std::cout << "warming up npus [";
     for (size_t i = 0; i < n_npus; i++)
         std::cout << (i ? ", " : "") << device_ids[i];

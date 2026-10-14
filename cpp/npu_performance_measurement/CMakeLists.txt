@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(examples-minimal-dependencies)
+project(npu-performance-measurement)
 
 add_compile_options(-Werror)
-
-get_filename_component(CONDA_PREFIX_ENV "$ENV{CONDA_PREFIX}" ABSOLUTE)
-include_directories(${CONDA_PREFIX_ENV}/include)
 
 # find dlpack
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake")

@@ -21,10 +21,10 @@ Open image_segmentation_on_npu.ipynb in Jupyter Notebook or JupyterLab to explor
 
 ## Testing
 PyTest test case:
-The file test_image_segementation.py contains automated tests for image segmentation using PyTest.
+The file test_image_segmentation.py contains automated tests for image segmentation using PyTest.
 
 ```bash 
-pytest test_image_segementation.py 
+pytest test_image_segmentation.py 
 ```
 
 # Description

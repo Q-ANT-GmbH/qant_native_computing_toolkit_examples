@@ -8,6 +8,7 @@
 #include <dlpack/dlpack.h>
 #include <iostream>
 #include <ostream>
+#include <stdfloat>
 #include <vector>
 
 #include "qant_native_computing_toolkit.h"
@@ -23,7 +24,7 @@ void delete_mtensor(struct DLManagedTensorVersioned *self)
 /// @brief Utility function to create a DLManagedTensorVersioned based on a std::vector
 /// @param vec The vector that holds the data
 /// @return The DLManagedTensorVersioned that wraps the data owned by the input vector.
-DLManagedTensorVersioned vector_to_mtensor(const std::vector<float> &vec)
+DLManagedTensorVersioned vector_to_mtensor(const std::vector<std::bfloat16_t> &vec)
 {
     int64_t const len = vec.size();
 
@@ -33,8 +34,8 @@ DLManagedTensorVersioned vector_to_mtensor(const std::vector<float> &vec)
     tensor.shape[0] = len;
     tensor.strides = NULL;
 
-    tensor.dtype.code = kDLFloat;
-    tensor.dtype.bits = 32;
+    tensor.dtype.code = kDLBfloat;
+    tensor.dtype.bits = 16;
     tensor.dtype.lanes = 1;
 
     tensor.data = const_cast<void *>(static_cast<const void *>(vec.data()));
@@ -54,10 +55,10 @@ DLManagedTensorVersioned vector_to_mtensor(const std::vector<float> &vec)
 /// @brief Util function to extract a vector from a DLManagedTensorVersioned
 /// @param tensor The DLManagedTensorVersioned that holds the data
 /// @return A vector containing the data that the DLManagedTensorVersioned owns
-std::vector<float> mtensor_to_vector(DLManagedTensorVersioned const *tensor)
+std::vector<std::bfloat16_t> mtensor_to_vector(DLManagedTensorVersioned const *tensor)
 {
-    float *data = static_cast<float *>(tensor->dl_tensor.data);
-    std::vector<float> vec(data, data + tensor->dl_tensor.shape[0]);
+    auto *data = static_cast<std::bfloat16_t *>(tensor->dl_tensor.data);
+    std::vector<std::bfloat16_t> vec(data, data + tensor->dl_tensor.shape[0]);
     return vec;
 }
 
@@ -67,8 +68,8 @@ int main()
     size_t n_elems = 2 * 4096 * 4096;
 
     std::cout << "Run " << n_elems << " multiplications." << std::endl;
-    auto us = std::vector<float>(n_elems, 0.5);
-    auto vs = std::vector<float>(n_elems, 0.5);
+    auto us = std::vector<std::bfloat16_t>(n_elems, 0.5bf16);
+    auto vs = std::vector<std::bfloat16_t>(n_elems, 0.5bf16);
 
     auto us_tensor = vector_to_mtensor(us);
     auto vs_tensor = vector_to_mtensor(vs);
@@ -81,7 +82,7 @@ int main()
         return -1;
     }
 
-    auto res_npu_mtensor = native::mul_npu_f32(npu_id, &us_tensor, &vs_tensor);
+    auto res_npu_mtensor = native::mul_npu(npu_id, &us_tensor, &vs_tensor);
     if (res_npu_mtensor == NULL)
     {
         exit(-1);
