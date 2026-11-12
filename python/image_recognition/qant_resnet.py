@@ -358,5 +358,5 @@ class QantResNet18:
 def to_class_prob(output):
     """Convert the output of the network to class probabilities."""
     output = output.numpy().astype(ml_dtypes.bfloat16)
-    probabilities = q_ai.softmax_fprop(output.squeeze()).squeeze()
+    probabilities = q_ai.softmax_fprop(output)
     return torch.from_numpy(probabilities.astype(np.float32))

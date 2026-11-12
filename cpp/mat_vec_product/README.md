@@ -12,7 +12,7 @@ XTensor == 0.25.0
 
 XTensor-BLAS == 0.21.0
 
-DLPack (bundled as the `dlpack/` git submodule, pinned at v1.2 — run `git submodule update --init dlpack` if the directory is empty)
+DLPack (bundled as the `dlpack/` git submodule, pinned at v1.4 — run `git submodule update --init dlpack` if the directory is empty)
 
 ## Usage
 Execute:
