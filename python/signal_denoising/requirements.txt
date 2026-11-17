@@ -1,0 +1,7 @@
+numpy
+matplotlib
+ml_dtypes>=0.6.0
+ipykernel
+jupyter
+testbook
+pytest

@@ -89,7 +89,8 @@ int main()
     char serials[n_npus_max][QANT_NATIVE_COMPUTING_TOOLKIT_DEFAULT_CHAR_ARR_LENGTH];
     size_t n_npus = 0;
 
-    int const err = info::get_available_npus(device_ids, serials, n_npus_max, &n_npus);
+    generic::QantDeviceCapability const operations[] = {generic::Mul};
+    int const err = generic::get_available_npus(operations, 1, device_ids, serials, n_npus_max, &n_npus);
     if (err != 0)
     {
         throw std::runtime_error("get_available_npus() failed");

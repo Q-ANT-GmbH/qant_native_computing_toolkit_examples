@@ -78,7 +78,12 @@ def main():
     )
     vector = (rng.uniform(-0.2, 0.2, size=(n_rows))).astype(ml_dtypes.bfloat16)
 
-    npu_ids = list(qant.generic.get_available_npus().keys())
+    npu_ids = [
+        id
+        for (id, _) in qant.generic.get_available_npus(
+            [qant.generic.QantDeviceCapability.Mul]
+        )
+    ]
     n_npus = len(npu_ids)
     print(f"Found {n_npus} NPUs")
     task_args = [(matrix, vector) for matrix in matrices]

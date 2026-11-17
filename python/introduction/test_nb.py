@@ -14,6 +14,7 @@ def test_notebook():
         function_names = [
             "mul_elementwise",
             "calc_scaled_periodic_nl_fprop",
+            "dft",
             "linear_fprop",
             "conv_fprop",
             "conv_transpose_fprop",
@@ -34,6 +35,7 @@ def test_notebook():
         special_errors = {
             "conv_transpose_fprop": 2e-2,
             "calc_scaled_periodic_nl_fprop": 2e-2,
+            "dft": 2e-2,
             "softmax_fprop": 2e-2,
             "calc_kan_layer_fprop": 2e-1,  # very high error as we are testing the almost cosine against the exact cosine
             "batchnorm2d_fprop": 2e-2,

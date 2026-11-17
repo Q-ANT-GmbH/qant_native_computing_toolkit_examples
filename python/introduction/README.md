@@ -3,7 +3,7 @@ This project introduces the core operations of the Q.ANT Native Computing Toolki
 
 ## Overview
 Notebook: intro.ipynb
-Walks through the SDK's mathematical and AI/neural-network operations - element-wise multiplication, scaled sinusoidal and KAN layers, linear layers, 2D convolution and transposed convolution, bias, activation functions (ReLU, Sigmoid, Softmax), pooling, and batch normalization - comparing each against PyTorch in bfloat16 precision.
+Walks through the SDK's mathematical and AI/neural-network operations - element-wise multiplication, scaled sinusoidal and KAN layers, the discrete Fourier transform (DFT), linear layers, 2D convolution and transposed convolution, bias, activation functions (ReLU, Sigmoid, Softmax), pooling, and batch normalization - comparing each against PyTorch or NumPy in bfloat16 precision.
 
 Notebook: intro_memory_management.ipynb
 Walks through the different levels of memory management.

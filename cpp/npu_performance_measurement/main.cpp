@@ -83,13 +83,17 @@ int main()
     }
 
     auto res_npu_mtensor = native::mul_npu(npu_id, &us_tensor, &vs_tensor);
+    us_tensor.deleter(&us_tensor);
+    vs_tensor.deleter(&vs_tensor);
     if (res_npu_mtensor == NULL)
     {
         exit(-1);
     }
-    QantPerformanceCounterInfo *counter_info = (QantPerformanceCounterInfo *)malloc(sizeof(QantPerformanceCounterInfo));
+    auto res_npu_vec = mtensor_to_vector(res_npu_mtensor);
+    res_npu_mtensor->deleter(res_npu_mtensor);
 
-    error = get_perf_counter(npu_id, counter_info);
+    QantPerformanceCounterInfo counter_info;
+    error = get_perf_counter(npu_id, &counter_info);
 
     if (error != 0)
     {
@@ -98,16 +102,14 @@ int main()
         return -1;
     }
 
-    auto res_npu_vec = mtensor_to_vector(res_npu_mtensor);
-
-    std::cout << "Timebased Counter (in s): " << counter_info->timebased_counter << std::endl;
+    std::cout << "Timebased Counter (in s): " << counter_info.timebased_counter << std::endl;
     // The stalling counter counts all the steps, where the system waits for data and is running an idle sequence
-    std::cout << "Stalling Counter (in s): " << counter_info->stalling_counter << std::endl;
+    std::cout << "Stalling Counter (in s): " << counter_info.stalling_counter << std::endl;
 
     // The pure NPU execution time is defined by
     // pure_optical_execution = timebased - stalling
     // This will also contain the calibration overhead
-    double execution_time = counter_info->timebased_counter - counter_info->stalling_counter;
+    double execution_time = counter_info.timebased_counter - counter_info.stalling_counter;
 
     double time_per_mul = execution_time / n_elems;
     double mul_speed = 1.0 / time_per_mul;
@@ -117,24 +119,26 @@ int main()
     std::cout << "NPU Speed (operations/s): " << std::fixed << mul_speed << std::endl;
 
     // The overall utilization is defined by the ratio of pure operation time vs total operation time
-    double utilization = 100 * execution_time / counter_info->timebased_counter;
+    double utilization = 100 * execution_time / counter_info.timebased_counter;
     std::cout << "NPU Utilization: " << utilization << "%" << std::endl;
 
     // The power consumption of the sidecar (containing the laser, photonic integrated circuit and the detector)
     // is defined by the P = U * I
     // I can be measured:
-    QantSensorInfo sensor_info = info::get_sensor_info(npu_id);
+    QantSensorInfo sensor_info;
+    error = info::get_sensor_info(npu_id, &sensor_info);
+    if (error != 0)
+    {
+        generic::release_npu(npu_id);
+        std::cout << "Could not read sensor info!" << std::endl;
+        return -1;
+    }
     auto voltage_12v = sensor_info.voltage_12v; // should be roughly 12V
     std::cout << "NPU 12V Power Level (V): " << voltage_12v << std::endl;
     auto current_12v = sensor_info.current_12v;
     std::cout << "NPU 12V Current (A): " << current_12v << std::endl;
     auto power_consumption = voltage_12v * current_12v;
     std::cout << "NPU Optical Components Power Consumption (W): " << power_consumption << std::endl;
-
-    us_tensor.deleter(&us_tensor);
-    vs_tensor.deleter(&vs_tensor);
-    res_npu_mtensor->deleter(res_npu_mtensor);
-    free(counter_info);
 
     generic::release_npu(npu_id);
 

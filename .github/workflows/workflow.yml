@@ -137,6 +137,9 @@ jobs:
           - example: npu_performance_measurement
             script: run_example.sh
             xtensor: false
+          - example: dft
+            script: run_example.sh
+            xtensor: false
           - example: mat_vec_product
             script: run_example.sh
             xtensor: true
